@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FarmOps Dashboard</title>
+  <link rel="stylesheet" href="style.css"/>
+  <!-- HTML: Inside <head> -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    .calendar .header {
+      font-weight: bold;
+      text-align: center;
+    }
+    .calendar div {
+      text-align: center;
+      padding: 6px 0;
+    }
+    .calendar .today {
+      outline: 2px dashed #4caf50;
+      font-weight: bold;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+ <div class="logo" style="
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 15px;
+  background: linear-gradient(to right, #e0f7fa, #f1f8e9);
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  margin: 10px;
+">
+  <img src="logo.png" alt="FarmOps Logo" style="
+    height: 36px;
+    width: 36px;
+    border-radius: 8px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+  ">
+  <span style="
+    font-size: 18px;
+    font-weight: bold;
+    color: #ffffff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+  ">
+    FarmOps
+  </span>
+</div>
+
+
+    <div class="menu">
+      <a href="#" onclick="showDashboard()"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+      <a href="#" onclick="showSmartCalendarOnly()"><i data-lucide="calendar-days"></i> Smart Crop Calendar</a>
+      <a href="#" onclick="showLogbook()"><i data-lucide="book-open-text"></i> Field Logbook</a>
+      <a href="#" onclick="showCropRecommendationOnly()"><i data-lucide="sprout"></i> Crop Recommendation</a>
+      <a href="#" onclick="showCropDiagnosis()"><i data-lucide="stethoscope"></i> Crop Diagnosis</a>
+      <a href="#" onclick="showSoilIrrigation()"><i data-lucide="droplets"></i> Soil & Irrigation</a>
+      <a href="#" onclick="hideAllSections()"><i data-lucide="cloud-sun"></i> Weather Alerts</a>
+      <a href="#" onclick="hideAllSections()"><i data-lucide="boxes"></i> Inventory Tracker</a>
+      <a href="#" onclick="hideAllSections()"><i data-lucide="wallet"></i> Budget Manager</a>
+      <a href="#" onclick="hideAllSections()"><i data-lucide="line-chart"></i> Market Tracker</a>
+      <a href="#" onclick="hideAllSections()"><i data-lucide="check-circle-2"></i> Certification Toolkit</a>
+      <a href="#" onclick="hideAllSections()"><i data-lucide="file-text"></i> Reports</a>
+      <a href="#" onclick="hideAllSections()"><i data-lucide="wifi-off"></i> Offline Sync</a>
+    </div>
+    <div class="bottom-menu">
+      <a href="#" onclick="hideAllSections()"><i data-lucide="user"></i> Account</a>
+      <a href="#" onclick="hideAllSections()"><i data-lucide="settings"></i> Settings</a>
+      <a href="#" onclick="hideAllSections()"><i data-lucide="phone"></i> Call Center</a>
+      <a href="#" onclick="hideAllSections()"><i data-lucide="help-circle"></i> Help</a>
+      <a href="#" onclick="logout()"><i data-lucide="log-out"></i> Log Out</a>
+      <a href="#" onclick="showEditProfile()"><i data-lucide="user-check"></i> Edit Profile</a>
+    </div>
+  </div>
+
+  <div id="overlay" onclick="toggleSidebar()"></div>
+  <div class="main">
+    <div class="topbar">
+      <div class="menu-toggle" onclick="toggleSidebar()"><i data-lucide="menu"></i></div>
+      <div class="profile">
+        <div id="user-info">Welcome, Farmer!</div>
+        <img src="https://via.placeholder.com/40" alt="Profile" />
+        <a href="#" onclick="logout()" style="color: white; margin-left: 15px; text-decoration: underline;">Log Out</a>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- INPUT FARM INFO -->
+      <div class="section" id="farmInfoSection">
+        <h3>🌍 Input Your Farm Info</h3>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <input type="text" id="location" placeholder="Detecting location..." class="small-input" style="width: 140px;" readonly>
+          <select id="soil" class="small-input" style="width: 160px;" onchange="onSoilChange()">
+            <option value="">Choose your soil type</option>
+            <option value="Clay">Clay</option>
+            <option value="Sandy">Sandy</option>
+            <option value="Silty">Silty</option>
+            <option value="Loamy">Loamy</option>
+            <option value="Peaty">Peaty</option>
+            <option value="Chalky">Chalky</option>
+            <option value="Clay Loam">Clay Loam</option>
+          </select>
+        </div>
+        <p id="inputSummary" style="margin-top: 10px; font-size: 13px; color: #555;"></p>
+      </div>
+
+      <!-- CROP RECOMMENDATIONS -->
+      <div class="section" id="cropRecommendationSection">
+        <h3>🌿 Recommended Crops for You</h3>
+        <div class="cards" id="recommendationCards">
+          <p>Please choose a soil type above to get started.</p>
+        </div>
+      </div>
+
+      <!-- WEATHER FORECAST -->
+      <div class="section" id="weatherForecastSection">
+        <h3>☀️ 5-Day Weather Forecast</h3>
+        <div id="forecastContainer"></div>
+      </div>
+
+      <!-- GROWTH TRACKER -->
+<div class="section" id="growthTrackerSection">
+  <h3>📈 Crop Growth Tracker</h3>
+  <div id="growthTrackerContainer" class="cards"></div>
+  <!-- Display latest log entries on Dashboard -->
+<div id="dashboardLogsPreview" class="cards" style="margin-top: 20px;">
+  <h4>📒 Recent Activity Logs</h4>
+  <div id="dashboardLogEntries"></div>
+</div>
+</div>
+
+<!-- EDIT PROFILE SECTION -->
+<div class="section" id="editProfileSection" style="display: none;">
+  <h3>👤 Edit Your Profile</h3>
+  <form id="editProfileForm">
+    <label>Full Name:</label>
+    <input type="text" id="editFullname" required>
+
+    <label>Email Address:</label>
+    <input type="email" id="editEmail" required>
+
+    <label>New Password:</label>
+    <input type="password" id="editPassword">
+
+    <button type="submit">💾 Save Changes</button>
+  </form>
+  <div id="profileUpdateMsg" style="margin-top: 10px;"></div>
+</div>
+
+
+<!-- FIELD LOGBOOK SECTION -->
+<div class="section" id="logbookSection" style="display: none;">
+  <h3>📝 Field Logbook</h3>
+  <form id="logForm">
+    <select id="logCrop" required>
+  <option value="">-- Select Crop --</option>
+  <option value="Cassava">Cassava</option>
+  <option value="Ginger">Ginger</option>
+  <option value="Turmeric">Turmeric</option>
+  <option value="Moringa">Moringa</option>
+  <option value="Peanut">Peanut</option>
+</select>
+    <input type="date" id="logDate" required />
+    <select id="logTitle" required>
+  <option value="">-- Select Activity --</option>
+  <option value="Planting">🌱 Planting</option>
+  <option value="Harvest">🌾 Harvest</option>
+  <option value="Fertilization">💧 Fertilization</option>
+  <option value="Irrigation">🚿 Irrigation</option>
+  <option value="Pest Control">🐛 Pest Control</option>
+  <option value="Weeding">🧹 Weeding</option>
+  <option value="Pruning">✂️ Pruning</option>
+  <option value="Others">🛠️ Others</option>
+</select>
+
+   <textarea id="logDetails" rows="3" placeholder="Describe the activity..."></textarea>
+
+    <button type="submit">➕ Add Log Entry</button>
+  </form>
+</div>
+<div class="section" id="logEntriesContainer" style="display: none;">
+  <h4>📚 Your Activity Logs</h4>
+  <div id="logEntries"></div>
+</div>
+
+<!-- CROP DIAGNOSIS SECTION -->
+<div class="section" id="cropDiagnosisSection" style="display: none;">
+  <h3>🩺 Crop Diagnosis Assistant</h3>
+  
+  <div style="display: flex; flex-direction: column; gap: 10px;">
+    <select id="diagnosisCrop" required>
+      <option value="">-- Select Crop --</option>
+      <option value="Cassava">Cassava</option>
+      <option value="Ginger">Ginger</option>
+      <option value="Turmeric">Turmeric</option>
+      <option value="Moringa">Moringa</option>
+      <option value="Peanut">Peanut</option>
+    </select>
+
+    <select id="diagnosisSymptoms" required>
+  <option value="">-- Select Symptom --</option>
+</select>
+
+<script>
+const cropSymptomsMap = {
+  Cassava: [
+    "yellow leaves",
+    "brown spots",
+    "wilting",
+    "root or stem rotting"
+  ],
+  Ginger: [
+    "mold",
+    "leaf curl",
+    "yellow leaves",
+    "brown spots"
+  ],
+  Turmeric: [
+    "black spots",
+    "wilting",
+    "stunted growth",
+    "leaf curl"
+  ],
+  Moringa: [
+    "holes in leaves",
+    "yellow leaves",
+    "stunted growth"
+  ],
+  Peanut: [
+    "brown spots",
+    "mold",
+    "wilting",
+    "yellow leaves"
+  ]
+};
+
+document.getElementById("diagnosisCrop").addEventListener("change", function () {
+  const crop = this.value;
+  const symptomsDropdown = document.getElementById("diagnosisSymptoms");
+
+  // Clear existing options
+  symptomsDropdown.innerHTML = '<option value="">-- Select Symptom --</option>';
+
+  if (cropSymptomsMap[crop]) {
+    cropSymptomsMap[crop].forEach(symptom => {
+      const option = document.createElement("option");
+      option.value = symptom;
+      option.textContent = symptom.charAt(0).toUpperCase() + symptom.slice(1);
+      symptomsDropdown.appendChild(option);
+    });
+  }
+});
+</script>
+
+
+    <button onclick="runDiagnosis()">🔍 Diagnose</button>
+  </div>
+
+  <div id="diagnosisResult" style="margin-top: 15px; padding: 10px; background: #e8f5e9; border-radius: 5px;"></div>
+
+  <hr style="margin: 20px 0;">
+
+  <h4>🌿 Organic Treatment Guides</h4>
+  <p>Select a topic below to learn how to make your own organic solution:</p>
+
+  <select id="organicSolutionSelect" onchange="showOrganicSolution()" style="margin-bottom: 10px;">
+    <option value="">-- Choose a guide --</option>
+    <option value="fertilizer">Organic Fertilizer (Compost, Fermented Juice)</option>
+    <option value="fungicide">Organic Fungicide (Garlic Spray, Neem Oil)</option>
+    <option value="pesticide">Natural Pest Repellent (Chili-Garlic Spray)</option>
+  </select>
+
+  <div id="organicSolutionContent" style="padding: 10px; background: #f1f8e9; border-radius: 5px;"></div>
+</div>
+
+<!-- Weather Alerts Section -->
+<section id="weatherAlertsSection" style="display: none;">
+  <h3>🌤️ Weather Alerts</h3>
+  <div id="weatherAlertBox" style="padding: 15px; background: #e8f4ff; border-left: 5px solid #2196F3; border-radius: 8px; margin-bottom: 10px;">
+    <strong>Loading today's weather alert...</strong>
+  </div>
+</section>
+
+
+<!-- SOIL & IRRIGATION SECTION -->
+<div class="section" id="soilIrrigationSection" style="display: none;">
+  <h3>🌾 Soil & Irrigation Insights</h3>
+
+  <h4>🧪 Soil Types Overview</h4>
+  <ul>
+    <li><strong>Clay:</strong> Retains water well but drains slowly. Best for water-loving crops like rice and taro.</li>
+    <li><strong>Sandy:</strong> Drains quickly and warms fast. Good for root crops like carrots, cassava, and peanut.</li>
+    <li><strong>Loamy:</strong> Ideal mix of sand, silt, and clay. Excellent fertility and structure for most crops.</li>
+    <li><strong>Peaty:</strong> Rich in organic matter, holds water, but acidic. Good for root vegetables when adjusted.</li>
+    <li><strong>Chalky:</strong> Alkaline and stony, drains fast. Needs pH balancing and fertilizers.</li>
+  </ul>
+
+  <h4>💧 Irrigation Techniques</h4>
+  <ul>
+    <li><strong>Drip Irrigation:</strong> Saves water by delivering it directly to plant roots. Ideal for row crops and dry areas.</li>
+    <li><strong>Sprinkler Irrigation:</strong> Simulates rain. Good for large, flat areas.</li>
+    <li><strong>Surface Irrigation:</strong> Water flows by gravity. Used in rice paddies and sloped fields.</li>
+    <li><strong>Manual Watering:</strong> Best for small gardens or container farms.</li>
+  </ul>
+
+  <h4>🧂 Soil Testing Tips</h4>
+  <ol>
+    <li>Collect soil samples from different spots in your farm.</li>
+    <li>Air dry and mix the samples.</li>
+    <li>Send to a local agri lab for nutrient & pH testing.</li>
+    <li>Use results to apply needed fertilizers or soil conditioners.</li>
+  </ol>
+
+  <h4>🌿 Natural Ways to Improve Soil</h4>
+  <ul>
+    <li>Add compost or organic mulch regularly.</li>
+    <li>Plant cover crops like legumes (mung bean, peanut) to fix nitrogen.</li>
+    <li>Rotate crops every season to avoid soil exhaustion.</li>
+  </ul>
+  <h4>📊 Real-Time Soil Moisture</h4>
+<div id="moistureDisplay" style="
+  padding: 10px;
+  margin-bottom: 15px;
+  background: #e3f2fd;
+  border-left: 5px solid #2196f3;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #0d47a1;
+">
+  🔄 Reading moisture sensor...
+</div>
+
+</div>
+
+
+      <!-- SMART CROP CALENDAR -->
+      <div class="section" id="smartCalendarSection" style="display: none;">
+        <h3>📅 Smart Crop Calendar</h3>
+        <div class="calendar-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <button onclick="changeMonth(-1)">◀</button>
+          <span id="calendarTitle" style="font-weight: bold;"></span>
+          <button onclick="changeMonth(1)">▶</button>
+        </div>
+        <div style="margin-bottom: 10px;">
+          <label for="cropSelect">🌾 Select Crop to Plant:</label>
+          <select id="cropSelect">
+            <option value="">-- Choose a crop --</option>
+            <option value="Cassava">Cassava</option>
+            <option value="Ginger">Ginger</option>
+            <option value="Turmeric">Turmeric</option>
+            <option value="Moringa">Moringa</option>
+            <option value="Peanut">Peanut</option>
+          </select>
+        </div>
+        <div id="calendar" class="calendar"></div>
+
+        <!-- ✅ Confirmation UI -->
+        <div id="confirmationPanel" style="margin-top: 10px; display: none;">
+          <p id="selectedDateLabel" style="margin-bottom: 5px;"></p>
+          <button onclick="confirmPlantingDate()">✅ Confirm Planting Date</button>
+          
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  lucide.createIcons();
+
+  const cropColors = {
+    Cassava: "#a2d149",
+    Ginger: "#f7b32b",
+    Turmeric: "#ff9f1c",
+    Moringa: "#70c1b3",
+    Peanut: "#b388eb"
+  };
+
+  const cropDurations = {
+    Cassava: 30,
+    Ginger: 20,
+    Turmeric: 25,
+    Moringa: 15,
+    Peanut: 60
+  };
+
+  let calendarMonth = new Date().getMonth();
+  let calendarYear = new Date().getFullYear();
+  let plantingData = JSON.parse(localStorage.getItem("plantingData")) || {};
+  let tempSelectedDateKey = null;
+
+  function toggleSidebar() {
+    document.getElementById("sidebar").classList.toggle("active");
+    document.getElementById("overlay").classList.toggle("active");
+  }
+
+  function logout() {
+    localStorage.removeItem("currentUser");
+    window.location.href = "index.html";
+  }
+  function showCropDiagnosis() {
+  hideAllSections();
+  document.getElementById("cropDiagnosisSection").style.display = "block";
+}
+
+function runDiagnosis() {
+  const crop = document.getElementById("diagnosisCrop").value;
+  const symptoms = document.getElementById("diagnosisSymptoms").value;
+  const resultBox = document.getElementById("diagnosisResult");
+
+  if (!crop || !symptoms) {
+    resultBox.innerHTML = "<p style='color:red;'>Please select a crop and symptom.</p>";
+    return;
+  }
+
+  let diagnosis = "No diagnosis matched. Please consult an agronomist.";
+
+  switch (symptoms) {
+    case "yellow leaves":
+      diagnosis = "Possible nitrogen or iron deficiency. Apply balanced fertilizer or foliar feed.";
+      break;
+    case "brown spots":
+    case "black spots":
+      diagnosis = "May indicate fungal infection. Apply fungicide and ensure proper drainage.";
+      break;
+    case "mold":
+      diagnosis = "Likely fungal disease (powdery mildew or downy mildew). Improve airflow and apply antifungal spray.";
+      break;
+    case "holes in leaves":
+      diagnosis = "Likely insect pest damage (e.g., beetles, caterpillars). Use neem oil or pest control.";
+      break;
+    case "wilting":
+      diagnosis = "May be caused by underwatering, overwatering, or root rot. Check moisture and root condition.";
+      break;
+    case "stunted growth":
+      diagnosis = "Could be nutrient deficiency or compacted soil. Consider fertilizing and loosening soil.";
+      break;
+    case "leaf curl":
+      diagnosis = "Often due to aphids or viral infections. Inspect for pests and isolate affected plants.";
+      break;
+    case "rotting":
+      diagnosis = "Indicates root or stem rot. Improve drainage and consider fungicide treatment.";
+      break;
+  }
+
+  resultBox.innerHTML = `
+    <p><strong>Crop:</strong> ${crop}</p>
+    <p><strong>Symptom:</strong> ${symptoms}</p>
+    <p><strong>Diagnosis:</strong> ${diagnosis}</p>
+  `;
+}
+
+function showOrganicSolution() {
+  const selection = document.getElementById("organicSolutionSelect").value;
+  const contentBox = document.getElementById("organicSolutionContent");
+
+  let content = "";
+
+  switch (selection) {
+    case "fertilizer":
+      content = `
+        <h4>🌱 How to Make Organic Fertilizer</h4>
+        <ul>
+          <li><strong>Banana Peel Fertilizer:</strong> Soak chopped banana peels in water for 2–3 days and use the water for potassium-rich feeding.</li>
+          <li><strong>Compost:</strong> Mix vegetable scraps, dried leaves, eggshells, and garden waste. Turn weekly and keep moist until it becomes dark and crumbly.</li>
+          <li><strong>Fermented Plant Juice (FPJ):</strong> Mix chopped leafy greens with brown sugar. Let ferment for 7 days. Dilute and spray.</li>
+        </ul>
+      `;
+      break;
+
+    case "fungicide":
+      content = `
+        <h4>🧄 How to Make Organic Fungicide</h4>
+        <ul>
+          <li><strong>Garlic Spray:</strong> Blend garlic with water, strain, and mix with soap. Spray on infected leaves.</li>
+          <li><strong>Neem Oil Mix:</strong> Mix neem oil + mild soap + water. Spray in early morning or evening.</li>
+          <li><strong>Baking Soda Spray:</strong> Mix 1 tsp baking soda + 1 tsp oil + soap in 1 liter water.</li>
+        </ul>
+      `;
+      break;
+
+    case "pesticide":
+      content = `
+        <h4>🐛 How to Make Natural Pest Repellent</h4>
+        <ul>
+          <li><strong>Chili-Garlic Spray:</strong> Blend 5 garlic cloves + 3 chili peppers + onion. Mix with water and soap. Spray weekly.</li>
+          <li><strong>Soap Spray:</strong> Mix 1 tbsp dish soap in 1 liter water. Effective against soft-bodied insects.</li>
+          <li><strong>Molasses Trap:</strong> Use molasses in bowls to attract and trap bugs.</li>
+        </ul>
+      `;
+      break;
+
+    default:
+      content = "<p style='color:#666;'>Select a guide to see instructions.</p>";
+  }
+
+  contentBox.innerHTML = content;
+}
+
+function showSoilIrrigation() {
+  hideAllSections();
+  document.getElementById("soilIrrigationSection").style.display = "block";
+}
+
+  function onSoilChange() {
+    const soil = document.getElementById("soil").value;
+    localStorage.setItem("input_soil", soil);
+    updateCropRecommendations(soil);
+  }
+
+  function updateCropRecommendations(soilType) {
+    const cards = document.getElementById("recommendationCards");
+    const matches = cropRecommendations.filter(crop => crop.soil.includes(soilType));
+    cards.innerHTML = matches.length === 0
+      ? `<p>No crops found for <strong>${soilType}</strong> soil.</p>`
+      : matches.map(crop => `
+          <div class="card">
+            <strong>${crop.name}</strong>
+            <p>${crop.days} | ${crop.risk} Risk | ${crop.profit} Profit</p>
+          </div>
+        `).join("");
+  }
+
+  function detectLocationAndLoadForecast() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(async position => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        try {
+          const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
+          const data = await res.json();
+          const city = data.city || data.locality || "Kabankalan";
+          document.getElementById("location").value = city;
+          loadWeatherForecast(city);
+        } catch {
+          document.getElementById("location").value = "Kabankalan";
+          loadWeatherForecast();
+        }
+      }, () => {
+        document.getElementById("location").value = "Kabankalan";
+        loadWeatherForecast();
+      });
+    }
+  }
+
+  async function loadWeatherForecast(city = "Kabankalan") {
+    const apiKey = "404e7881b1596f12388e7afcfeeb726f";
+    const url = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${apiKey}`;
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      const daily = {};
+      data.list.forEach(item => {
+        if (item.dt_txt.includes("12:00:00")) {
+          const date = new Date(item.dt_txt);
+          const label = date.toLocaleDateString("en-PH", { weekday: "short", month: "short", day: "numeric" });
+          daily[label] = {
+            temp: Math.round(item.main.temp),
+            icon: item.weather[0].icon,
+            desc: item.weather[0].main
+          };
+        }
+      });
+
+      const forecast = document.getElementById("forecastContainer");
+      forecast.innerHTML = Object.entries(daily).map(([day, data]) => `
+        <div class="forecast-card">
+          <p><strong>${day}</strong></p>
+          <img src="https://openweathermap.org/img/wn/${data.icon}@2x.png" alt="${data.desc}" />
+          <p>${data.desc}</p>
+          <p>${data.temp}&deg;C</p>
+        </div>
+      `).join("");
+    } catch {
+      document.getElementById("forecastContainer").innerHTML = "<p style='color:red;'>Unable to load forecast.</p>";
+    }
+  }
+
+  function sameDate(d1, d2) {
+    return d1.getDate() === d2.getDate() &&
+           d1.getMonth() === d2.getMonth() &&
+           d1.getFullYear() === d2.getFullYear();
+  }
+
+ function renderCalendar() {
+  const calendar = document.getElementById("calendar");
+  const today = new Date();
+
+  const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
+  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+  const monthName = new Date(calendarYear, calendarMonth).toLocaleString('default', { month: 'long' });
+
+  document.getElementById("calendarTitle").textContent = `${monthName} ${calendarYear}`;
+  calendar.innerHTML = "";
+
+  const headers = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  headers.forEach(day => calendar.innerHTML += `<div class="header">${day}</div>`);
+
+  for (let i = 0; i < firstDay; i++) calendar.innerHTML += `<div></div>`;
+
+  for (let day = 1; day <= daysInMonth; day++) {
+  const date = new Date(calendarYear, calendarMonth, day);
+  const isToday = sameDate(date, today);
+  const dateKey = `${calendarYear}-${calendarMonth + 1}-${day}`;
+
+  let bgColor = "";
+  let harvestBorder = "";
+  let tooltip = "";
+
+  // 🌱 Planting and Harvest from Smart Calendar
+  for (const [plantKey, cropName] of Object.entries(plantingData)) {
+    const [y, m, d] = plantKey.split("-").map(Number);
+    const plantDate = new Date(y, m - 1, d);
+    const harvestDate = new Date(plantDate);
+    harvestDate.setDate(plantDate.getDate() + cropDurations[cropName]);
+
+    if (sameDate(date, plantDate)) {
+      bgColor = cropColors[cropName];
+      tooltip += `Planted: ${cropName}\n`;
+    } else if (sameDate(date, harvestDate)) {
+      harvestBorder = "2px dashed red";
+      tooltip += `Harvest: ${cropName}\n`;
+    }
+  }
+
+  // 📝 Field Logbook Activities
+  const logMatches = logEntries.filter(log => {
+    const logDate = new Date(log.date);
+    return sameDate(logDate, date);
+  });
+
+  if (logMatches.length > 0) {
+    tooltip += logMatches.map(log => `${log.title}: ${log.details}`).join("\n");
+    if (!bgColor) bgColor = "#cfe2ff"; // light blue for log-only days
+  }
+
+  calendar.innerHTML += `
+    <div class="${isToday ? 'today' : ''}" 
+         onclick="markPlantingDate('${dateKey}')"
+         style="background-color: ${bgColor}; border: ${harvestBorder}; border-radius: 5px; cursor: pointer;" 
+         title="${tooltip.trim()}">
+      ${day}
+    </div>`;
+}
+
+  renderAlerts(today);
+}
+
+
+  function markPlantingDate(dateKey) {
+    const crop = document.getElementById("cropSelect").value;
+    if (!crop && plantingData[dateKey]) {
+      if (confirm("Do you want to remove this planting record?")) {
+        delete plantingData[dateKey];
+        localStorage.setItem("plantingData", JSON.stringify(plantingData));
+        renderCalendar();
+      }
+      return;
+    }
+    if (!crop) return alert("Please select a crop first.");
+    tempSelectedDateKey = dateKey;
+    const [year, month, day] = dateKey.split("-");
+    const readableDate = new Date(year, month - 1, day).toDateString();
+    document.getElementById("selectedDateLabel").textContent = `Selected date: ${readableDate}`;
+    document.getElementById("confirmationPanel").style.display = "block";
+  }
+
+  function confirmPlantingDate() {
+  const crop = document.getElementById("cropSelect").value;
+  if (!tempSelectedDateKey || !crop) return;
+
+  plantingData[tempSelectedDateKey] = crop;
+  localStorage.setItem("plantingData", JSON.stringify(plantingData));
+  document.getElementById("confirmationPanel").style.display = "none";
+  tempSelectedDateKey = null;
+  renderCalendar();
+  renderGrowthTracker(); // ✅ Refresh tracker after planting
+}
+
+
+  function changeMonth(offset) {
+    calendarMonth += offset;
+    if (calendarMonth < 0) {
+      calendarMonth = 11;
+      calendarYear--;
+    } else if (calendarMonth > 11) {
+      calendarMonth = 0;
+      calendarYear++;
+    }
+    renderCalendar();
+  }
+
+  function renderAlerts(today) {
+    let alertMessage = "";
+    Object.entries(plantingData).forEach(([dateKey, crop]) => {
+      const plantDate = new Date(dateKey);
+      const harvestDate = new Date(plantDate);
+      harvestDate.setDate(harvestDate.getDate() + cropDurations[crop]);
+
+      const diff = Math.ceil((harvestDate - today) / (1000 * 60 * 60 * 24));
+      if (diff === 7) {
+        alertMessage += `<p>🔔 Harvest alert: <strong>${crop}</strong> in 7 days (${harvestDate.toDateString()})</p>`;
+      }
+    });
+
+    if (!document.getElementById("calendarAlerts")) {
+      const alertDiv = document.createElement("div");
+      alertDiv.id = "calendarAlerts";
+      alertDiv.style.marginTop = "10px";
+      alertDiv.style.padding = "10px";
+      alertDiv.style.background = "#fff3cd";
+      alertDiv.style.border = "1px solid #ffeeba";
+      alertDiv.style.borderRadius = "5px";
+      document.getElementById("smartCalendarSection").appendChild(alertDiv);
+    }
+
+    document.getElementById("calendarAlerts").innerHTML = alertMessage || "<p>No upcoming alerts.</p>";
+  }
+
+ function hideAllSections() {
+  document.getElementById("farmInfoSection").style.display = "none";
+  document.getElementById("cropRecommendationSection").style.display = "none";
+  document.getElementById("weatherForecastSection").style.display = "none";
+  document.getElementById("smartCalendarSection").style.display = "none";
+  document.getElementById("growthTrackerSection").style.display = "none"; // ✅ Add this line
+  document.getElementById("logbookSection").style.display = "none";
+  document.getElementById("logEntriesContainer").style.display = "none";
+  document.getElementById("cropDiagnosisSection").style.display = "none"; // ✅ ADD THIS LINE
+  document.getElementById("soilIrrigationSection").style.display = "none";
+}
+
+function showDashboard() {
+  hideAllSections();
+  document.getElementById("farmInfoSection").style.display = "block";
+  document.getElementById("cropRecommendationSection").style.display = "block";
+  document.getElementById("weatherForecastSection").style.display = "block";
+  document.getElementById("growthTrackerSection").style.display = "block";
+
+  renderGrowthTracker();
+  renderDashboardLogs(); // ✅ Add this line to always refresh dashboard log preview
+}
+
+
+  function showSmartCalendarOnly() {
+    hideAllSections();
+    document.getElementById("smartCalendarSection").style.display = "block";
+  }
+window.addEventListener("load", () => {
+  const username = localStorage.getItem("currentUser");
+  if (username) {
+    const user = JSON.parse(localStorage.getItem("user_" + username));
+    document.getElementById("user-info").innerHTML = `Hello, <strong>${user.fullname}</strong><br><small>${user.email}</small>`;
+  }
+
+  const savedSoil = localStorage.getItem("input_soil");
+  if (savedSoil) {
+    document.getElementById("soil").value = savedSoil;
+    updateCropRecommendations(savedSoil);
+  }
+
+  detectLocationAndLoadForecast();
+  renderCalendar();
+  renderDashboardLogs(); // ✅ Ensure this is here
+  showDashboard();
+});
+
+
+  const cropRecommendations = [
+    { name: "Cassava", soil: ["Clay", "Sandy", "Loamy"], days: "30 DAYS", risk: "Low", profit: "High" },
+    { name: "Ginger", soil: ["Loamy", "Sandy"], days: "20 DAYS", risk: "Medium", profit: "High" },
+    { name: "Turmeric", soil: ["Loamy", "Sandy", "Clay Loam"], days: "25 DAYS", risk: "Medium", profit: "Medium" },
+    { name: "Moringa", soil: ["Sandy", "Loamy"], days: "15 DAYS", risk: "Low", profit: "Medium" },
+    { name: "Peanut", soil: ["Sandy", "Loamy", "Clay Loam"], days: "60 DAYS", risk: "Medium", profit: "High" }
+  ];
+function renderGrowthTracker() {
+  const container = document.getElementById("growthTrackerContainer");
+  const today = new Date();
+
+  if (!Object.keys(plantingData).length) {
+    container.innerHTML = "<p>No crops planted yet.</p>";
+    return;
+  }
+
+  let html = "";
+
+  for (const [dateKey, cropName] of Object.entries(plantingData)) {
+    const [y, m, d] = dateKey.split("-").map(Number);
+    const plantDate = new Date(y, m - 1, d);
+    const duration = cropDurations[cropName];
+    const harvestDate = new Date(plantDate);
+    harvestDate.setDate(plantDate.getDate() + duration);
+
+    const daysPassed = Math.floor((today - plantDate) / (1000 * 60 * 60 * 24));
+    const progress = Math.min(Math.max((daysPassed / duration) * 100, 0), 100);
+
+    let stage = "🌱";
+    if (progress > 80) stage = "🥕";
+    else if (progress > 50) stage = "🌿";
+    else if (progress > 20) stage = "🌾";
+
+    html += `
+  <div class="card">
+    <strong>${cropName}</strong>
+    <p>📅 Planted: ${plantDate.toDateString()}</p>
+    <p>🚜 Harvest: ${harvestDate.toDateString()}</p>
+    <div class="growth-bar">
+      <div class="growth-bar-fill" style="width: ${Math.round(progress)}%;"></div>
+    </div>
+    <p>🔄 Growth: ${Math.round(progress)}% ${stage}</p>
+    <button class="delete" onclick="removeCrop('${dateKey}')">❌ Remove</button>
+  </div>
+`;
+
+  }
+
+  container.innerHTML = html;
+}
+
+function removeCrop(dateKey) {
+  if (confirm("Are you sure you want to remove this planting record and its associated logs?")) {
+    const removedCrop = plantingData[dateKey];
+
+    // Delete from plantingData
+    delete plantingData[dateKey];
+    localStorage.setItem("plantingData", JSON.stringify(plantingData));
+
+    // Filter logs that match the same crop and date
+    logEntries = logEntries.filter(log => !(log.crop === removedCrop && log.date === dateKey));
+    localStorage.setItem("fieldLogs", JSON.stringify(logEntries));
+
+    // Refresh UI
+    renderCalendar();
+    renderGrowthTracker();
+    renderLogs();
+    renderDashboardLogs();
+  }
+}
+
+
+// Field Logbook Functions
+const logForm = document.getElementById("logForm");
+const logEntriesDiv = document.getElementById("logEntries");
+let logEntries = JSON.parse(localStorage.getItem("fieldLogs")) || [];
+logForm.addEventListener("submit", e => {
+  e.preventDefault();
+  const crop = document.getElementById("logCrop").value;
+  const date = document.getElementById("logDate").value;
+  const title = document.getElementById("logTitle").value;
+  const details = document.getElementById("logDetails").value;
+
+  // Save log entry
+  logEntries.push({ crop, date, title, details });
+  localStorage.setItem("fieldLogs", JSON.stringify(logEntries));
+
+  // ✅ If activity is "Planting", sync it into plantingData for calendar
+  if (title === "Planting" && !plantingData[date]) {
+    plantingData[date] = crop;
+    localStorage.setItem("plantingData", JSON.stringify(plantingData));
+  }
+
+  logForm.reset();
+  renderLogs();
+  renderCalendar();         // ✅ Will now show planting and harvest in calendar
+  renderDashboardLogs();    // ✅ Will show recent activity
+  renderGrowthTracker();    // ✅ Will show crop growth progress
+});
+
+
+
+function renderLogs() {
+  if (!logEntries.length) {
+    logEntriesDiv.innerHTML = "<p style='color:#888;'>No logs recorded yet.</p>";
+    return;
+  }
+
+  logEntriesDiv.innerHTML = logEntries.map((entry, index) => `
+    <div class="log-entry">
+      <h4>${entry.title} - <small>${entry.date}</small></h4>
+      <p>${entry.details}</p>
+      <button onclick="deleteLog(${index})" style="margin-top: 5px; color: red;">❌ Delete</button>
+    </div>
+  `).join("");
+}
+
+function renderDashboardLogs() {
+  const dashboardLogContainer = document.getElementById("dashboardLogEntries");
+  if (!logEntries.length) {
+    dashboardLogContainer.innerHTML = "<p style='color:#888;'>No logs recorded yet.</p>";
+    return;
+  }
+
+  // Show only the 3 most recent logs
+  const latestLogs = logEntries.slice(-3).reverse();
+
+  dashboardLogContainer.innerHTML = latestLogs.map(log => `
+    <div class="card">
+      <strong>${log.title}</strong> - <small>${log.date}</small>
+      <p><em>Crop:</em> ${log.crop}</p>
+      <p>${log.details}</p>
+    </div>
+  `).join("");
+}
+
+
+function showLogbook() {
+  hideAllSections();
+  document.getElementById("logbookSection").style.display = "block";
+  document.getElementById("logEntriesContainer").style.display = "block";
+  renderLogs();
+}
+
+function showCropRecommendationOnly() {
+  hideAllSections();
+  document.getElementById("farmInfoSection").style.display = "block";
+  document.getElementById("cropRecommendationSection").style.display = "block";
+
+  const savedSoil = localStorage.getItem("input_soil");
+  if (savedSoil) {
+    updateCropRecommendations(savedSoil);
+  }
+}
+
+
+function deleteLog(index) {
+  if (confirm("Are you sure you want to delete this log entry?")) {
+    logEntries.splice(index, 1);
+    localStorage.setItem("fieldLogs", JSON.stringify(logEntries));
+    renderLogs();
+    renderCalendar();
+    renderDashboardLogs(); // ✅ refresh dashboard logs
+  }
+}
+
+
+</script>
+</body>
+</html>
