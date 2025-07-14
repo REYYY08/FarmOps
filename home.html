@@ -92,7 +92,7 @@
       <div class="menu-toggle" onclick="toggleSidebar()"><i data-lucide="menu"></i></div>
       <div class="profile">
         <div id="user-info">Welcome, Farmer!</div>
-        <img src="https://via.placeholder.com/40" alt="Profile" />
+         <img id="profilePicture" src="default.jpg" alt="Profile Picture" style="cursor:pointer;" onclick="showEditProfile()" />
         <a href="#" onclick="logout()" style="color: white; margin-left: 15px; text-decoration: underline;">Log Out</a>
       </div>
     </div>
@@ -194,6 +194,26 @@
 <div class="section" id="logEntriesContainer" style="display: none;">
   <h4>📚 Your Activity Logs</h4>
   <div id="logEntries"></div>
+</div>
+
+<!-- Edit Profile Section -->
+<div class="section" id="editProfileSection" style="display: none;">
+  <h3>👤 Edit Profile</h3>
+  <form id="editProfileForm">
+    <label>Full Name:</label><br>
+    <input type="text" id="editFullname"><br><br>
+
+    <label>Email:</label><br>
+    <input type="email" id="editEmail"><br><br>
+
+    <label>Upload New Profile Picture:</label><br>
+    <input type="file" id="editProfilePic" accept="image/*"><br><br>
+
+    <img id="previewPic" style="max-width: 100px; display: none; border-radius: 50%;" />
+
+    <br><br>
+    <button type="submit">💾 Save Changes</button>
+  </form>
 </div>
 
 <!-- CROP DIAGNOSIS SECTION -->
@@ -350,6 +370,7 @@ document.getElementById("diagnosisCrop").addEventListener("change", function () 
       <!-- SMART CROP CALENDAR -->
       <div class="section" id="smartCalendarSection" style="display: none;">
         <h3>📅 Smart Crop Calendar</h3>
+        <div id="calendarLegend" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;"></div>
         <div class="calendar-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
           <button onclick="changeMonth(-1)">◀</button>
           <span id="calendarTitle" style="font-weight: bold;"></span>
@@ -522,17 +543,58 @@ function showSoilIrrigation() {
   }
 
   function updateCropRecommendations(soilType) {
-    const cards = document.getElementById("recommendationCards");
-    const matches = cropRecommendations.filter(crop => crop.soil.includes(soilType));
-    cards.innerHTML = matches.length === 0
-      ? `<p>No crops found for <strong>${soilType}</strong> soil.</p>`
-      : matches.map(crop => `
-          <div class="card">
-            <strong>${crop.name}</strong>
-            <p>${crop.days} | ${crop.risk} Risk | ${crop.profit} Profit</p>
-          </div>
-        `).join("");
+  const container = document.getElementById("recommendationCards");
+  const weatherToday = getTodayWeatherCondition(); // helper function
+  const currentMonth = new Date().getMonth(); // 0 = Jan, 11 = Dec
+
+  const cards = cropRecommendations.map(crop => {
+    // Skip crops that don't match the soil type
+    if (!crop.soil.includes(soilType)) return "";
+
+    // Adjust profit and risk based on weather and season
+    let risk = "Medium";
+    let profit = "Medium";
+
+    // Weather-based logic
+    if (weatherToday.includes("storm") || weatherToday.includes("rain")) {
+      risk = "High"; // more risk during bad weather
+    } else if (weatherToday.includes("clear") || weatherToday.includes("sun")) {
+      profit = "High";
+    }
+
+    // Month-based seasonal logic (you can customize per crop!)
+    if ((crop.name === "Cassava" || crop.name === "Moringa") && (currentMonth >= 3 && currentMonth <= 7)) {
+      profit = "Very High";
+      risk = "Low";
+    }
+
+    if (crop.name === "Ginger" && (currentMonth >= 8 && currentMonth <= 11)) {
+      risk = "Low";
+    }
+
+    return `
+      <div class="card">
+        <strong>${crop.name}</strong>
+        <p>⏱ Duration: ${crop.days}</p>
+        <p>📉 Risk: <strong>${risk}</strong></p>
+        <p>💰 Profit: <strong>${profit}</strong></p>
+      </div>
+    `;
+  });
+
+  container.innerHTML = cards.join("") || "<p>No suitable crops for this soil type.</p>";
+}
+
+function getTodayWeatherCondition() {
+  const today = new Date().toISOString().split("T")[0];
+  const weatherData = JSON.parse(localStorage.getItem("weatherData") || "{}");
+
+  if (weatherData[today] && weatherData[today].desc) {
+    return weatherData[today].desc.toLowerCase();
   }
+  return "";
+}
+
 
   function detectLocationAndLoadForecast() {
     if (navigator.geolocation) {
@@ -545,6 +607,8 @@ function showSoilIrrigation() {
           const city = data.city || data.locality || "Kabankalan";
           document.getElementById("location").value = city;
           loadWeatherForecast(city);
+          localStorage.setItem("weatherData", JSON.stringify(daily));
+
         } catch {
           document.getElementById("location").value = "Kabankalan";
           loadWeatherForecast();
@@ -631,9 +695,10 @@ function showSoilIrrigation() {
       bgColor = cropColors[cropName];
       tooltip += `Planted: ${cropName}\n`;
     } else if (sameDate(date, harvestDate)) {
-      harvestBorder = "2px dashed red";
-      tooltip += `Harvest: ${cropName}\n`;
-    }
+  bgColor = cropColors[cropName]; // Use the same crop color as planting
+  harvestBorder = "2px dashed red"; // Optional: you can keep border to distinguish
+  tooltip += `Harvest: ${cropName}\n`;
+}
   }
 
   // 📝 Field Logbook Activities
@@ -657,6 +722,7 @@ function showSoilIrrigation() {
 }
 
   renderAlerts(today);
+  renderCalendarLegend();
 }
 
 
@@ -729,6 +795,26 @@ function showSoilIrrigation() {
 
     document.getElementById("calendarAlerts").innerHTML = alertMessage || "<p>No upcoming alerts.</p>";
   }
+
+  function renderCalendarLegend() {
+  const legendContainer = document.getElementById("calendarLegend");
+  legendContainer.innerHTML = "";
+
+  for (const [crop, color] of Object.entries(cropColors)) {
+    const legendItem = document.createElement("div");
+    legendItem.style.display = "flex";
+    legendItem.style.alignItems = "center";
+    legendItem.style.gap = "5px";
+
+    legendItem.innerHTML = `
+      <div style="width: 15px; height: 15px; background-color: ${color}; border-radius: 3px;"></div>
+      <span style="font-size: 13px;">${crop}</span>
+    `;
+
+    legendContainer.appendChild(legendItem);
+  }
+}
+
 
  function hideAllSections() {
   document.getElementById("farmInfoSection").style.display = "none";
@@ -878,6 +964,21 @@ logForm.addEventListener("submit", e => {
   renderGrowthTracker();    // ✅ Will show crop growth progress
 });
 
+function showEditProfile() {
+  hideAllSections(); // hide others
+  document.getElementById("editProfileSection").style.display = "block";
+
+  const username = localStorage.getItem("currentUser");
+  if (!username) return;
+
+  const user = JSON.parse(localStorage.getItem("user_" + username));
+
+  // Pre-fill user info
+  document.getElementById("editFullname").value = user.fullname || "";
+  document.getElementById("editEmail").value = user.email || "";
+}
+
+
 
 
 function renderLogs() {
@@ -915,12 +1016,26 @@ function renderDashboardLogs() {
 }
 
 
+
 function showLogbook() {
   hideAllSections();
   document.getElementById("logbookSection").style.display = "block";
   document.getElementById("logEntriesContainer").style.display = "block";
   renderLogs();
 }
+
+function updateUserDisplay(user) {
+  const profilePic = document.getElementById("profilePicture");
+  if (user.photo) {
+    profilePic.src = user.photo;
+  }
+
+  document.getElementById("user-info").innerHTML = `
+    Hello, <strong>${user.fullname}</strong><br>
+    <small>${user.email}</small>
+  `;
+}
+
 
 function showCropRecommendationOnly() {
   hideAllSections();
@@ -943,6 +1058,39 @@ function deleteLog(index) {
     renderDashboardLogs(); // ✅ refresh dashboard logs
   }
 }
+document.getElementById("editProfileForm").addEventListener("submit", function (e) {
+  e.preventDefault();
+
+  const username = localStorage.getItem("currentUser");
+  if (!username) return;
+
+  const user = JSON.parse(localStorage.getItem("user_" + username));
+
+  const newFullname = document.getElementById("editFullname").value;
+  const newEmail = document.getElementById("editEmail").value;
+  const fileInput = document.getElementById("editProfilePic");
+
+  user.fullname = newFullname;
+  user.email = newEmail;
+
+  if (fileInput.files.length > 0) {
+    const reader = new FileReader();
+    reader.onload = function () {
+      user.photo = reader.result;
+      localStorage.setItem("user_" + username, JSON.stringify(user));
+      updateUserDisplay(user);
+      alert("Profile updated!");
+      showDashboard();
+    };
+    reader.readAsDataURL(fileInput.files[0]);
+  } else {
+    localStorage.setItem("user_" + username, JSON.stringify(user));
+    updateUserDisplay(user);
+    alert("Profile updated!");
+    showDashboard();
+  }
+});
+
 
 
 </script>
