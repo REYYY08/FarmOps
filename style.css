@@ -725,6 +725,7 @@ canvas {
 .icon-button:hover {
   background: rgba(13, 71, 161, 0.08);
 }
+
 .chart-container {
   background-color: #fff;
   border-radius: 16px;
@@ -792,5 +793,12 @@ canvas {
   animation: fadeInSlide 0.5s ease;
 }
 
+.section-title-blue {
+  color: #0d47a1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: bold;
+}
 
 </style>
