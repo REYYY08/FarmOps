@@ -104,7 +104,7 @@
     <div class="content">
       <!-- INPUT FARM INFO -->
       <div class="section" id="farmInfoSection">
-        <h3>🌍 Input Your Farm Info</h3>
+        <h3><i data-lucide="file-text"></i> Input Your Farm Info</h3>
         <div style="display: flex; align-items: center; gap: 10px;">
           <input type="text" id="location" placeholder="Detecting location..." class="small-input" style="width: 140px;" readonly>
           <select id="soil" class="small-input" style="width: 160px;" onchange="onSoilChange()">
@@ -123,7 +123,7 @@
 
       <!-- CROP RECOMMENDATIONS -->
       <div class="section" id="cropRecommendationSection">
-        <h3>🌿 Recommended Crops for You</h3>
+        <h3><i data-lucide="leaf"></i> Recommended Crops for You</h3>
         <div class="cards" id="recommendationCards">
           <p>Please choose a soil type above to get started.</p>
         </div>
@@ -132,17 +132,19 @@
 
       <!-- WEATHER FORECAST -->
       <div class="section" id="weatherForecastSection">
-        <h3>☀️ 5-Day Weather Forecast</h3>
+        <h3><i data-lucide="cloud-sun"></i> 5-Day Weather Forecast</h3>
         <div id="forecastContainer"></div>
       </div>
 
       <!-- GROWTH TRACKER -->
 <div class="section" id="growthTrackerSection">
-  <h3>📈 Crop Growth Tracker</h3>
+  <h3><i data-lucide="trending-up"></i> Crop Growth Tracker</h3>
   <div id="growthTrackerContainer" class="cards"></div>
   <!-- Display latest log entries on Dashboard -->
 <div id="dashboardLogsPreview" class="cards" style="margin-top: 20px;">
-  <h4>📒 Recent Activity Logs</h4>
+
+  
+  <h4 class="section-title-blue"><i data-lucide="clipboard-list"></i> Recent Activity Logs</h4>
   <div id="dashboardLogEntries"></div>
 </div>
 </div>
@@ -319,7 +321,10 @@ document.getElementById("diagnosisCrop").addEventListener("change", function () 
     height: 60px;
     font-size: 24px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-    cursor: pointer;">💬</button>
+    <button class="icon-button" onclick="openComment(${index})">
+  <i data-lucide="message-circle"></i>
+</button>
+
 
   <!-- Chat popup -->
   <div id="chatbotBox" style="
@@ -471,7 +476,7 @@ async function sendChat() {
 
       <!-- SMART CROP CALENDAR -->
       <div class="section" id="smartCalendarSection" style="display: none;">
-        <h3>📅 Smart Crop Calendar</h3>
+        <h3><i data-lucide="calendar-days"></i> Smart Crop Calendar</h3>
         <div id="calendarLegend" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;"></div>
         <div class="calendar-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
           <button onclick="changeMonth(-1)">◀</button>
@@ -479,7 +484,7 @@ async function sendChat() {
           <button onclick="changeMonth(1)">▶</button>
         </div>
         <div style="margin-bottom: 10px;">
-          <label for="cropSelect">🌾 Select Crop to Plant:</label>
+          <label for="cropSelect"><i data-lucide="wheat"></i> Select Crop to Plant:</label>
           <select id="cropSelect">
             <option value="">-- Choose a crop --</option>
             <option value="Cassava">Cassava</option>
@@ -661,6 +666,8 @@ if (organicContent[symptoms]) {
 
 }
 
+
+
 function showOrganicSolution() {
   const selection = document.getElementById("organicSolutionSelect").value;
   const contentBox = document.getElementById("organicSolutionContent");
@@ -670,7 +677,7 @@ function showOrganicSolution() {
   switch (selection) {
     case "fertilizer":
       content = `
-        <h4>🌱 How to Make Organic Fertilizer</h4>
+        <h4>🌱  How to Make Organic Fertilizer</h4>
         <ul>
           <li><strong>Banana Peel Fertilizer:</strong> Soak chopped banana peels in water for 2–3 days and use the water for potassium-rich feeding.</li>
           <li><strong>Compost:</strong> Mix vegetable scraps, dried leaves, eggshells, and garden waste. Turn weekly and keep moist until it becomes dark and crumbly.</li>
